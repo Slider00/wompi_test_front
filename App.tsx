@@ -1,45 +1,152 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
+import React, { useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import './src/locales/i18n';
+import { Provider } from 'react-redux';
+import { store, useAppDispatch } from './src/store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { loadTransactions } from './src/features/payment/store/paymentSlice';
+import { ProductsNavigator } from './src/features/products/navigation/ProductsNavigator';
+import { PaymentNavigator, PaymentSubScreen } from './src/features/payment/navigation/PaymentNavigator';
+import { AuthNavigator } from './src/features/auth/navigation/AuthNavigator';
+import { OnboardingNavigator } from './src/features/onboarding/navigation/OnboardingNavigator';
+import { BottomTabBar } from './src/components/BottomTabBar';
+import { SplashScreen } from './src/components/SplashScreen';
+import { GLOBAL_STYLES } from './src/theme/theme';
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
-import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+import { Security } from './src/utils/security';
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+import { Header } from './src/components/Header';
 
-  return (
-    <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
-    </SafeAreaProvider>
-  );
-}
+type Tab = 'PRODUCTS' | 'PAYMENT' | 'HISTORY';
 
 function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+  const dispatch = useAppDispatch();
+  const [showSplash, setShowSplash] = useState(true);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+  const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('PRODUCTS');
+  const [paymentScreen, setPaymentScreen] = useState<PaymentSubScreen>('PAYMENT');
+
+  // Verificar si ya completó el Onboarding y si tiene sesión activa
+  useEffect(() => {
+    const bootstrapAsync = async () => {
+      try {
+        const onboardingValue = await AsyncStorage.getItem('has_completed_onboarding');
+        if (onboardingValue === 'true') {
+          setHasCompletedOnboarding(true);
+        }
+
+        const token = await Security.getSecureItem('auth_token');
+        if (token) {
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error('[App] Error al inicializar la aplicación:', error);
+      } finally {
+        setCheckingOnboarding(false);
+      }
+    };
+    bootstrapAsync();
+  }, []);
+
+  // Carga inicial del historial cifrado tras autenticación exitosa
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(loadTransactions());
+    }
+  }, [dispatch, isAuthenticated]);
+
+  const handleTabChange = (tab: 'PRODUCTS' | 'PAYMENT' | 'STATUS' | 'HISTORY') => {
+    if (tab === 'STATUS') {
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case 'PRODUCTS':
+        return <ProductsNavigator />;
+      case 'PAYMENT':
+        return (
+          <PaymentNavigator
+            initialScreen="PAYMENT"
+            onScreenChange={setPaymentScreen}
+          />
+        );
+      case 'HISTORY':
+        return (
+          <PaymentNavigator
+            initialScreen="HISTORY"
+            onScreenChange={setPaymentScreen}
+          />
+        );
+      default:
+        return <ProductsNavigator />;
+    }
+  };
+
+  const shouldHideTabBar = activeTab === 'PAYMENT' && paymentScreen === 'STATUS';
+  const currentMenuHighlight = activeTab === 'PAYMENT' && paymentScreen === 'HISTORY' ? 'HISTORY' : activeTab;
+
+  const renderContent = () => {
+    if (checkingOnboarding) {
+      return <View style={GLOBAL_STYLES.container} />;
+    }
+
+    if (!hasCompletedOnboarding) {
+      const handleOnboardingComplete = async () => {
+        try {
+          await AsyncStorage.setItem('has_completed_onboarding', 'true');
+          setHasCompletedOnboarding(true);
+        } catch (error) {
+          console.error('[App] Error al guardar onboarding:', error);
+          setHasCompletedOnboarding(true); // Permitir continuar en caso de error
+        }
+      };
+      return <OnboardingNavigator onComplete={handleOnboardingComplete} />;
+    }
+
+    if (!isAuthenticated) {
+      return <AuthNavigator onLoginSuccess={() => setIsAuthenticated(true)} />;
+    }
+
+    return (
+      <View style={GLOBAL_STYLES.container}>
+        {/* Header global de la aplicación */}
+        <Header onLogout={() => setIsAuthenticated(false)} />
+
+        {/* Contenido principal de la pantalla */}
+        <View style={{ flex: 1 }}>
+          {renderActiveTab()}
+        </View>
+        
+        {/* Menú inferior global */}
+        {!shouldHideTabBar && (
+          <BottomTabBar currentScreen={currentMenuHighlight} onNavigate={handleTabChange} />
+        )}
+      </View>
+    );
+  };
 
   return (
-    <View style={styles.container}>
-      <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      />
+    <View style={{ flex: 1 }}>
+      {renderContent()}
+      {showSplash && (
+        <SplashScreen onAnimationComplete={() => setShowSplash(false)} />
+      )}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-});
-
-export default App;
+export default function App() {
+  return (
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <AppContent />
+      </SafeAreaProvider>
+    </Provider>
+  );
+}

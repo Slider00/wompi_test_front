@@ -73,3 +73,12 @@ yarn-error.log
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Environments
+.env.test
+.env.prod
+env.ts
+
+# Local logs/outputs
+test_output*.txt
+

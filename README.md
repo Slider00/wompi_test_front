@@ -1,97 +1,137 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# Wompi Checkout - Mobile Front-End (React Native)
 
-# Getting Started
+Este es el front-end móvil del proyecto de prueba técnica para Wompi, desarrollado con **React Native (v0.86.0)** de forma pura (CLI), respetando la restricción estricta de no utilizar Expo ni otros frameworks multiplataforma.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 🚀 Arquitectura y Estructura del Proyecto
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+El código está organizado bajo una **Arquitectura Híbrida basada en Capas y Características (Feature-Based & Layered Architecture)** para garantizar la separación de responsabilidades y alta escalabilidad:
 
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+```text
+src/
+├── components/       # Componentes visuales genéricos y responsivos
+├── features/         # Módulos funcionales de la aplicación
+│   └── payment/      # Flujo de transacciones y pagos (Wompi)
+│       ├── components/  # Componentes exclusivos de pagos (Card Preview, etc.)
+│       ├── screens/     # Pantallas (PaymentScreen, StatusScreen, HistoryScreen)
+│       └── store/       # Slice de Redux y lógica de persistencia
+├── store/            # Configuración global del Store de Redux (Flux)
+├── theme/            # Tokens del sistema de diseño responsivo (Colores, Spacing, Fuentes)
+├── utils/            # Utilidades (Escala responsiva y encriptación AES)
+└── env.ts            # Variables de entorno cargadas
 ```
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 📦 Características Principales e Implementación
 
-### Android
+### 1. Responsividad Avanzada (Referencia Mínima: iPhone SE)
+Para cumplir con el soporte para pantallas pequeñas (375x667 puntos lógicos) y prevenir desbordamientos, implementamos un helper en `src/utils/responsive.ts`:
+* **Escala Proporcional**: Las fuentes, márgenes y dimensiones de cajas escalan dinámicamente según la resolución física y lógica del dispositivo usando `Dimensions`.
+* **Ajuste a Límites de UI**: Las pantallas están envueltas en `RootContainer.tsx` utilizando `SafeAreaView` (evita superposición del notch) y `KeyboardAvoidingView` + `ScrollView` (mueve los inputs dinámicamente y permite hacer scroll cuando el teclado en pantalla está desplegado).
 
-```sh
-# Using npm
-npm run android
+### 2. Gestión de Estado con Redux (Flux)
+* Se utiliza **Redux Toolkit** (`@reduxjs/toolkit` y `react-redux`) para centralizar el flujo de datos siguiendo el patrón Flux de forma estricta.
+* Las acciones asíncronas se manejan a través de Redux Thunks (`loadTransactions` y `saveNewTransaction`).
 
-# OR using Yarn
-yarn android
+### 3. Almacenamiento Local Cifrado (¡Seguridad AES!)
+* Por motivos de seguridad y de acuerdo a los requerimientos de la prueba, **los datos de transacciones de pago se almacenan de forma totalmente cifrada**.
+* Se utiliza la librería de criptografía puramente en JavaScript `crypto-js` para aplicar cifrado de grado militar **AES (Advanced Encryption Standard)** con una clave secreta que se lee de las variables de entorno `.env.test` / `.env.prod`.
+* El string resultante encriptado se almacena en el dispositivo a través de `@react-native-async-storage/async-storage`.
+
+### 4. Manejo de Variables de Entorno
+Se implementó un script automático `scripts/load-env.js` que se ejecuta antes de compilar la app:
+* Lee el archivo `.env.test` (desarrollo/testing) o `.env.prod` (producción) según la variable `APP_ENV`.
+* Genera dinámicamente un archivo TypeScript tipado y no editable en git (`env.ts`).
+
+---
+
+## 🛠️ Cómo Iniciar el Proyecto Localmente
+
+### Prerrequisitos en macOS / Windows
+Asegúrate de tener instalados los SDK nativos correspondientes (Xcode para iOS, Android Studio / SDK para Android), Node.js y CocoaPods.
+
+1. **Instalar dependencias del proyecto:**
+   ```bash
+   cd Wompi_test_front
+   npm install
+   ```
+
+2. **Instalar dependencias nativas (iOS solamente):**
+   ```bash
+   cd ios && pod install && cd ..
+   ```
+
+3. **Ejecutar servidor de desarrollo (Metro):**
+   ```bash
+   npm run start
+   ```
+
+4. **Compilar y ejecutar en emulador/dispositivo:**
+   * **iOS (Simulador):**
+     ```bash
+     npm run ios
+     ```
+   * **Android (Emulador):**
+     ```bash
+     npm run android
+     ```
+
+---
+
+## 🧪 Pruebas Unitarias y Cobertura (Jest)
+
+El proyecto cuenta con una cobertura integral de pruebas unitarias que validan la lógica de negocio, las utilidades de responsividad, el cifrado seguro y el ciclo de vida de Redux (reducers, actions y thunks asíncronos), superando el requisito del **80% de cobertura**.
+
+### Comando para correr las pruebas y generar cobertura:
+```bash
+npm run test -- --coverage
 ```
 
-### iOS
+### Resultados de Cobertura de Pruebas:
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
+```text
+File                                           | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-----------------------------------------------|---------|----------|---------|---------|-------------------
+All files                                            |   94.33 |    85.42 |   95.06 |   94.15 |                   
+ Wompi_test_front                                    |   86.95 |    83.33 |     100 |   86.66 |                   
+  App.tsx                                            |   86.66 |    83.33 |     100 |   86.36 | 32-35,60-61,73,97 
+  env.ts                                             |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/components                     |   95.45 |     87.5 |     100 |   95.45 |                   
+  BottomTabBar.tsx                                   |   100 |      100 |     100 |     100 |                   
+  RootContainer.tsx                                  |   100 |    83.33 |     100 |     100 | 40                
+  TabBarIcon.tsx                                     |      90 |     87.5 |     100 |      90 | 54                
+ Wompi_test_front/src/features/auth/navigation       |     100 |      100 |     100 |     100 |                   
+  AuthNavigator.tsx                                  |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/features/auth/screens          |     100 |      100 |     100 |     100 |                   
+  LoginScreen.tsx                                    |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/features/onboarding/navigation |     100 |      100 |     100 |     100 |                   
+  OnboardingNavigator.tsx                            |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/features/onboarding/screens    |     100 |      100 |     100 |     100 |                   
+  OnboardingScreen.tsx                               |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/features/payment/navigation    |   81.81 |       50 |     100 |   81.81 |                   
+  PaymentNavigator.tsx                               |   81.81 |       50 |     100 |   81.81 | 38,42             
+ Wompi_test_front/src/features/payment/screens       |   94.49 |    88.88 |   80.95 |   94.28 |                   
+  HistoryScreen.tsx                                  |   95.23 |    71.42 |   88.88 |      95 | 106               
+  PaymentScreen.tsx                                  |   96.61 |     91.3 |   85.71 |   96.49 | 79,253            
+  StatusScreen.tsx                                   |   89.65 |    85.71 |      60 |   89.28 | 20-21,117         
+ Wompi_test_front/src/features/payment/store         |     100 |      100 |     100 |     100 |                   
+  paymentSlice.ts                                    |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/features/products/navigation   |     100 |      100 |     100 |     100 |                   
+  ProductsNavigator.tsx                              |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/features/products/screens      |     100 |      100 |     100 |     100 |                   
+  ProductsScreen.tsx                                 |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/locales                        |   63.63 |       40 |     100 |   63.63 |                   
+  i18n.ts                                            |   63.63 |       40 |     100 |   63.63 | 18-19,27-30       
+ Wompi_test_front/src/store                          |     100 |      100 |     100 |     100 |                   
+  index.ts                                           |     100 |      100 |     100 |     100 |                   
+ Wompi_test_front/src/theme                          |     100 |       50 |     100 |     100 |                   
+  theme.ts                                           |     100 |       50 |     100 |     100 | 82                
+ Wompi_test_front/src/utils                          |   97.77 |    73.33 |     100 |   97.77 |                   
+  responsive.ts                                      |   92.85 |    66.66 |     100 |   92.85 | 40                
+  security.ts                                        |     100 |    83.33 |     100 |     100 | 7                 
+-----------------------------------------------------|---------|----------|---------|---------|-------------------
 ```
 
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
-npm run ios
-
-# OR using Yarn
-yarn ios
-```
-
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
-
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
-
-## Step 3: Modify your app
-
-Now that you have successfully run the app, let's make changes!
-
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
-
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+> **Nota sobre Cobertura**: Gracias a las pruebas interactivas de renderizado y simulación de flujos de interacción de formularios, la cobertura total del proyecto supera holgadamente el requisito de la prueba técnica, reportando un **94.33%** de cobertura general.
