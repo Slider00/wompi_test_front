@@ -1,6 +1,7 @@
 import paymentReducer, {
   setActiveTransaction,
   clearError,
+  setPendingAmount,
   loadTransactions,
   saveNewTransaction,
   PaymentState,
@@ -31,6 +32,7 @@ describe('Payment Redux Slice Tests', () => {
     activeTransaction: null,
     loading: false,
     error: null,
+    pendingAmount: null,
   };
 
   const sampleTx: Transaction = {
@@ -61,6 +63,11 @@ describe('Payment Redux Slice Tests', () => {
     const errorState: PaymentState = { ...initialState, error: 'Hubo un error' };
     const nextState = paymentReducer(errorState, clearError());
     expect(nextState.error).toBeNull();
+  });
+
+  test('should handle setPendingAmount', () => {
+    const nextState = paymentReducer(initialState, setPendingAmount(150000));
+    expect(nextState.pendingAmount).toBe(150000);
   });
 
   describe('loadTransactions thunk', () => {

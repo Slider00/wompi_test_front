@@ -17,6 +17,7 @@ export interface PaymentState {
   activeTransaction: Transaction | null;
   loading: boolean;
   error: string | null;
+  pendingAmount: number | null;
 }
 
 const initialState: PaymentState = {
@@ -24,6 +25,7 @@ const initialState: PaymentState = {
   activeTransaction: null,
   loading: false,
   error: null,
+  pendingAmount: null,
 };
 
 const STORAGE_KEY = 'secure_transactions_data';
@@ -82,6 +84,9 @@ const paymentSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    setPendingAmount(state, action: PayloadAction<number | null>) {
+      state.pendingAmount = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -115,5 +120,5 @@ const paymentSlice = createSlice({
   },
 });
 
-export const { setActiveTransaction, clearError } = paymentSlice.actions;
+export const { setActiveTransaction, clearError, setPendingAmount } = paymentSlice.actions;
 export default paymentSlice.reducer;

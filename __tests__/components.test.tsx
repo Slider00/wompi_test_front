@@ -404,9 +404,18 @@ describe('UI Component Render Tests', () => {
   test('ProductsScreen and ProductsNavigator render correctly', () => {
     let screen: any;
     let navigator: any;
+    const mockNavigate = jest.fn();
     ReactTestRenderer.act(() => {
-      screen = ReactTestRenderer.create(<ProductsScreen />);
-      navigator = ReactTestRenderer.create(<ProductsNavigator />);
+      screen = ReactTestRenderer.create(
+        <Provider store={store}>
+          <ProductsScreen onNavigateToPayment={mockNavigate} />
+        </Provider>
+      );
+      navigator = ReactTestRenderer.create(
+        <Provider store={store}>
+          <ProductsNavigator onNavigateToPayment={mockNavigate} />
+        </Provider>
+      );
     });
     expect(screen.toJSON()).toBeDefined();
     expect(navigator.toJSON()).toBeDefined();

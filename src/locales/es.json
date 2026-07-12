@@ -48,9 +48,11 @@
     "declined": "Declinado"
   },
   "products": {
-    "title": "Productos",
-    "subtitle": "Catálogo de productos independiente",
-    "placeholder_desc": "Módulo de Catálogo de Productos\n(Este archivo es el componente principal e independiente de productos)"
+    "title": "Catálogo de Productos",
+    "subtitle": "Selecciona de 1 a N artículos y procesa tu pago",
+    "btn_checkout": "Comprar ahora",
+    "total_label": "Total",
+    "items_selected": "artículos seleccionados"
   },
   "auth": {
     "brand_name": "Wompi Pay",

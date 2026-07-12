@@ -10,10 +10,11 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch, useAppSelector } from '../../../store';
-import { saveNewTransaction } from '../store/paymentSlice';
+import { saveNewTransaction, setPendingAmount } from '../store/paymentSlice';
 import { RootContainer } from '../../../components/RootContainer';
 import { COLORS, SPACING, FONTS, SHADOWS, GLOBAL_STYLES } from '../../../theme/theme';
 import { scale, verticalScale, moderateScale } from '../../../utils/responsive';
+import { useEffect } from 'react';
 
 interface PaymentScreenProps {
   onNavigate: (screen: 'PAYMENT' | 'STATUS' | 'HISTORY') => void;
@@ -22,10 +23,17 @@ interface PaymentScreenProps {
 export const PaymentScreen: React.FC<PaymentScreenProps> = ({ onNavigate }) => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
-  const { loading, error } = useAppSelector((state) => state.payment);
+  const { pendingAmount, loading, error } = useAppSelector((state) => state.payment);
 
   // Estados del formulario
   const [amount, setAmount] = useState('');
+
+  useEffect(() => {
+    if (pendingAmount !== null) {
+      setAmount(pendingAmount.toString());
+      dispatch(setPendingAmount(null));
+    }
+  }, [pendingAmount, dispatch]);
   const [email, setEmail] = useState('');
   const [cardHolder, setCardHolder] = useState('');
   const [cardNumber, setCardNumber] = useState('');

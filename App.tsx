@@ -68,7 +68,7 @@ function AppContent() {
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'PRODUCTS':
-        return <ProductsNavigator />;
+        return <ProductsNavigator onNavigateToPayment={() => setActiveTab('PAYMENT')} />;
       case 'PAYMENT':
         return (
           <PaymentNavigator
@@ -84,7 +84,7 @@ function AppContent() {
           />
         );
       default:
-        return <ProductsNavigator />;
+        return <ProductsNavigator onNavigateToPayment={() => setActiveTab('PAYMENT')} />;
     }
   };
 
