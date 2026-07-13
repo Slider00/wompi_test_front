@@ -73,10 +73,7 @@ export const RegisterScreen: React.FC<RegisterScreenProps> = ({
       // 1. Crear el usuario en la BD del backend
       await authService.register(email, name, password);
 
-      // 2. Solicitar envío de código OTP
-      await authService.sendOtp(email);
-
-      // 3. Pasar al flujo de verificación OTP
+      // 2. Pasar al flujo de éxito
       onRegisterSuccess(email);
     } catch (err: any) {
       setErrors({

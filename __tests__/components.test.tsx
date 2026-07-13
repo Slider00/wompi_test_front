@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactTestRenderer from 'react-test-renderer';
 import { Provider } from 'react-redux';
-import { TextInput, TouchableOpacity } from 'react-native';
+import { TextInput, TouchableOpacity, Alert } from 'react-native';
 import { store } from '../src/store';
 import { RootContainer } from '../src/components/RootContainer';
 import { PaymentScreen } from '../src/features/payment/screens/PaymentScreen';
@@ -13,7 +13,6 @@ import { ProductsNavigator } from '../src/features/products/navigation/ProductsN
 import { PaymentNavigator } from '../src/features/payment/navigation/PaymentNavigator';
 import { LoginScreen } from '../src/features/auth/screens/LoginScreen';
 import { RegisterScreen } from '../src/features/auth/screens/RegisterScreen';
-import { OtpScreen } from '../src/features/auth/screens/OtpScreen';
 import { AuthNavigator } from '../src/features/auth/navigation/AuthNavigator';
 import { OnboardingScreen } from '../src/features/onboarding/screens/OnboardingScreen';
 import { OnboardingNavigator } from '../src/features/onboarding/navigation/OnboardingNavigator';
@@ -43,6 +42,18 @@ jest.mock('../src/features/auth/services/authService', () => ({
       }
       return Promise.resolve({ success: true, message: 'OTP verificado' });
     }),
+  },
+}));
+
+// Mock del servicio de pagos para evitar peticiones HTTP reales en los tests
+jest.mock('../src/features/payment/services/paymentService', () => ({
+  paymentService: {
+    createTransaction: jest.fn((data) => Promise.resolve({
+      id: 'mock-tx-id',
+      reference: data.reference || 'mock-ref',
+      createdAt: new Date().toISOString(),
+    })),
+    updateTransactionStatus: jest.fn().mockResolvedValue({ success: true }),
   },
 }));
 
@@ -222,7 +233,7 @@ describe('UI Component Render Tests', () => {
     const payButton = buttons[0]; // "Pagar con Wompi"
 
     await ReactTestRenderer.act(async () => {
-      payButton.props.onPress();
+      await payButton.props.onPress();
     });
 
     // Debe haber navegado a la pantalla de recibo
@@ -364,7 +375,9 @@ describe('UI Component Render Tests', () => {
     let component: any;
     ReactTestRenderer.act(() => {
       component = ReactTestRenderer.create(
-        <BottomTabBar currentScreen="PAYMENT" onNavigate={mockNavigate} />
+        <Provider store={store}>
+          <BottomTabBar currentScreen="PAYMENT" onNavigate={mockNavigate} />
+        </Provider>
       );
     });
     expect(component.toJSON()).toBeDefined();
@@ -401,11 +414,12 @@ describe('UI Component Render Tests', () => {
     expect(productsInactive.toJSON()).toBeDefined();
   });
 
-  test('ProductsScreen and ProductsNavigator render correctly', () => {
+  test('ProductsScreen and ProductsNavigator render correctly', async () => {
     let screen: any;
     let navigator: any;
     const mockNavigate = jest.fn();
-    ReactTestRenderer.act(() => {
+    
+    await ReactTestRenderer.act(async () => {
       screen = ReactTestRenderer.create(
         <Provider store={store}>
           <ProductsScreen onNavigateToPayment={mockNavigate} />
@@ -417,8 +431,17 @@ describe('UI Component Render Tests', () => {
         </Provider>
       );
     });
+
+    // Flush de promesas y microtareas asíncronas
+    await ReactTestRenderer.act(async () => {
+      await new Promise((resolve) => setTimeout(() => resolve(null), 0));
+    });
+
     expect(screen.toJSON()).toBeDefined();
     expect(navigator.toJSON()).toBeDefined();
+
+    screen.unmount();
+    navigator.unmount();
   });
 
   test('PaymentNavigator renders correctly', async () => {
@@ -438,7 +461,7 @@ describe('UI Component Render Tests', () => {
     let component: any;
     
     ReactTestRenderer.act(() => {
-      component = ReactTestRenderer.create(<AuthNavigator onLoginSuccess={mockSuccess} />);
+      component = ReactTestRenderer.create(<AuthNavigator onLoginSuccess={mockSuccess} onEnterAsGuest={jest.fn()} />);
     });
     expect(component.toJSON()).toBeDefined();
 
@@ -595,113 +618,12 @@ describe('UI Component Render Tests', () => {
     expect(mockRegisterSuccess).toHaveBeenCalledWith('newuser@example.com');
   });
 
-  test('OtpScreen renders correctly and handles verify, resend and digits focus switching', async () => {
-    const mockVerifySuccess = jest.fn();
-    const mockGoBack = jest.fn();
-    let component: any;
-
-    jest.useFakeTimers();
-
-    ReactTestRenderer.act(() => {
-      component = ReactTestRenderer.create(
-        <OtpScreen
-          onVerifySuccess={mockVerifySuccess}
-          targetEmail="test@example.com"
-          flowType="REGISTER"
-          onGoBack={mockGoBack}
-        />
-      );
-    });
-    expect(component.toJSON()).toBeDefined();
-
-    const inputs = component.root.findAllByType(TextInput);
-    const backBtn = component.root.findByProps({ testID: 'otp-back' });
-    const verifyBtn = component.root.findByProps({ testID: 'otp-submit' });
-
-    // 1. Click en volver
-    ReactTestRenderer.act(() => {
-      backBtn.props.onPress();
-    });
-    expect(mockGoBack).toHaveBeenCalled();
-
-    // 2. Click en verificar incompleto
-    await ReactTestRenderer.act(async () => {
-      await verifyBtn.props.onPress();
-    });
-    expect(component.toJSON()).toBeDefined();
-
-    // 3. Escribir en inputs (validar números y autofoco)
-    const mockFocus = jest.fn();
-    inputs[1].props.ref = { current: { focus: mockFocus } };
-    ReactTestRenderer.act(() => {
-      inputs[0].props.onChangeText('1');
-    });
-
-    // Simular borrar con Backspace
-    ReactTestRenderer.act(() => {
-      inputs[1].props.onKeyPress({ nativeEvent: { key: 'Backspace' } });
-    });
-
-    // 4. Llenar OTP incorrecto '999999' y verificar
-    ReactTestRenderer.act(() => { inputs[0].props.onChangeText('9'); });
-    ReactTestRenderer.act(() => { inputs[1].props.onChangeText('9'); });
-    ReactTestRenderer.act(() => { inputs[2].props.onChangeText('9'); });
-    ReactTestRenderer.act(() => { inputs[3].props.onChangeText('9'); });
-    ReactTestRenderer.act(() => { inputs[4].props.onChangeText('9'); });
-    ReactTestRenderer.act(() => { inputs[5].props.onChangeText('9'); });
-    
-    await ReactTestRenderer.act(async () => {
-      await verifyBtn.props.onPress();
-    });
-    expect(mockVerifySuccess).not.toHaveBeenCalled();
-
-    // Avanzar el tiempo 60 segundos para terminar el contador del OTP y mostrar el botón de Reenvío
-    ReactTestRenderer.act(() => {
-      jest.advanceTimersByTime(60000);
-    });
-
-    const resendBtn = component.root.findByProps({ testID: 'otp-resend' });
-
-    // 5. Reenviar OTP
-    const originalAlert = (globalThis as any).alert;
-    (globalThis as any).alert = jest.fn();
-    await ReactTestRenderer.act(async () => {
-      await resendBtn.props.onPress();
-    });
-    expect((globalThis as any).alert).toHaveBeenCalled();
-    (globalThis as any).alert = originalAlert;
-
-    // Al reenviar, se reinicia el temporizador a 60, por lo que el botón se oculta de nuevo.
-    // Avanzamos 60 segundos otra vez para que vuelva a aparecer y nos permita re-llenar/verificar.
-    ReactTestRenderer.act(() => {
-      jest.advanceTimersByTime(60000);
-    });
-
-    // 6. Llenar OTP correcto '123456' y verificar
-    ReactTestRenderer.act(() => { inputs[0].props.onChangeText('1'); });
-    ReactTestRenderer.act(() => { inputs[1].props.onChangeText('2'); });
-    ReactTestRenderer.act(() => { inputs[2].props.onChangeText('3'); });
-    ReactTestRenderer.act(() => { inputs[3].props.onChangeText('4'); });
-    ReactTestRenderer.act(() => { inputs[4].props.onChangeText('5'); });
-    ReactTestRenderer.act(() => { inputs[5].props.onChangeText('6'); });
-
-    await ReactTestRenderer.act(async () => {
-      await verifyBtn.props.onPress();
-    });
-    expect(mockVerifySuccess).toHaveBeenCalledWith('123456');
-    
-    component.unmount();
-    jest.useRealTimers();
-  });
-
-  test('AuthNavigator handles complete register-to-otp-to-success navigation flow', async () => {
+  test('AuthNavigator handles complete register navigation flow', async () => {
     const mockSuccess = jest.fn();
     let component: any;
 
-    jest.useFakeTimers();
-
     ReactTestRenderer.act(() => {
-      component = ReactTestRenderer.create(<AuthNavigator onLoginSuccess={mockSuccess} />);
+      component = ReactTestRenderer.create(<AuthNavigator onLoginSuccess={mockSuccess} onEnterAsGuest={jest.fn()} />);
     });
     expect(component.toJSON()).toBeDefined();
 
@@ -725,9 +647,13 @@ describe('UI Component Render Tests', () => {
       toRegisterLink2.props.onPress();
     });
 
-    // 4. Completar Registro válido en RegisterScreen para transitar a OTP
+    // 4. Completar Registro válido en RegisterScreen para regresar a LOGIN
     const regInputs = component.root.findAllByType(TextInput);
     const regSubmitBtn = component.root.findByProps({ testID: 'register-submit' });
+
+    // Mock alert
+    const originalAlert = Alert.alert;
+    Alert.alert = jest.fn();
 
     ReactTestRenderer.act(() => {
       regInputs[0].props.onChangeText('Julian Perez');
@@ -740,50 +666,11 @@ describe('UI Component Render Tests', () => {
       await regSubmitBtn.props.onPress();
     });
 
-    expect(component.root.findByType(OtpScreen)).toBeDefined();
+    expect(Alert.alert).toHaveBeenCalled();
+    expect(component.root.findByType(LoginScreen)).toBeDefined();
 
-    // 5. Probar botón "Volver" en OtpScreen
-    const otpBackBtn = component.root.findByProps({ testID: 'otp-back' });
-    ReactTestRenderer.act(() => {
-      otpBackBtn.props.onPress();
-    });
-    expect(component.root.findByType(RegisterScreen)).toBeDefined();
-
-    // Volver a enviar el registro para regresar a OTP
-    const regInputsRemounted = component.root.findAllByType(TextInput);
-    ReactTestRenderer.act(() => {
-      regInputsRemounted[0].props.onChangeText('Julian Perez');
-      regInputsRemounted[1].props.onChangeText('newuser@example.com');
-      regInputsRemounted[2].props.onChangeText('password123');
-      regInputsRemounted[3].props.onChangeText('password123');
-    });
-
-    const regSubmitBtnRemounted = component.root.findByProps({ testID: 'register-submit' });
-    await ReactTestRenderer.act(async () => {
-      await regSubmitBtnRemounted.props.onPress();
-    });
-    expect(component.root.findByType(OtpScreen)).toBeDefined();
-
-    // 6. Completar OTP válido en OtpScreen para gatillar onLoginSuccess
-    const otpInputs = component.root.findAllByType(TextInput);
-    const otpVerifyBtn = component.root.findByProps({ testID: 'otp-submit' });
-
-    ReactTestRenderer.act(() => { otpInputs[0].props.onChangeText('1'); });
-    ReactTestRenderer.act(() => { otpInputs[1].props.onChangeText('2'); });
-    ReactTestRenderer.act(() => { otpInputs[2].props.onChangeText('3'); });
-    ReactTestRenderer.act(() => { otpInputs[3].props.onChangeText('4'); });
-    ReactTestRenderer.act(() => { otpInputs[4].props.onChangeText('5'); });
-    ReactTestRenderer.act(() => { otpInputs[5].props.onChangeText('6'); });
-
-    await ReactTestRenderer.act(async () => {
-      await otpVerifyBtn.props.onPress();
-    });
-
-    expect(mockSuccess).toHaveBeenCalled();
-    
-    // Cleanup de temporizadores y desmonte de componentes
+    Alert.alert = originalAlert;
     component.unmount();
-    jest.useRealTimers();
   });
 
   test('SplashScreen renders correctly and fires onAnimationComplete callback', () => {

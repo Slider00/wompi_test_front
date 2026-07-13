@@ -1,9 +1,10 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { TabBarIcon } from './TabBarIcon';
 import { COLORS, SPACING, FONTS, SHADOWS } from '../theme/theme';
 import { scale, moderateScale } from '../utils/responsive';
+import { useAppSelector } from '../store';
 
 interface BottomTabBarProps {
   currentScreen: 'PRODUCTS' | 'PAYMENT' | 'STATUS' | 'HISTORY';
@@ -15,6 +16,7 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
   onNavigate,
 }) => {
   const { t } = useTranslation();
+  const cart = useAppSelector((state) => state.payment.cart);
 
   const tabs = [
     {
@@ -43,7 +45,17 @@ export const BottomTabBar: React.FC<BottomTabBarProps> = ({
             key={tab.id}
             activeOpacity={0.7}
             style={styles.tabButton}
-            onPress={() => onNavigate(tab.id)}
+            onPress={() => {
+              if (tab.id === 'PAYMENT' && cart.length === 0) {
+                Alert.alert(
+                  t('cart_empty_title', { defaultValue: 'Carrito Vacío' }),
+                  t('cart_empty_desc', { defaultValue: 'Por favor, selecciona al menos un producto para proceder al pago.' }),
+                  [{ text: t('ok', { defaultValue: 'Aceptar' }) }]
+                );
+                return;
+              }
+              onNavigate(tab.id);
+            }}
           >
             <TabBarIcon name={tab.iconName} active={isActive} />
             <Text

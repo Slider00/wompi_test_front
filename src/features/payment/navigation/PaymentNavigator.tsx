@@ -8,6 +8,7 @@ export type PaymentSubScreen = 'PAYMENT' | 'STATUS' | 'HISTORY';
 interface PaymentNavigatorProps {
   initialScreen: PaymentSubScreen;
   onScreenChange?: (screen: PaymentSubScreen) => void;
+  onNavigateToProducts?: () => void;
 }
 
 /**
@@ -18,6 +19,7 @@ interface PaymentNavigatorProps {
 export const PaymentNavigator: React.FC<PaymentNavigatorProps> = ({
   initialScreen,
   onScreenChange,
+  onNavigateToProducts,
 }) => {
   const [currentScreen, setCurrentScreen] = useState<PaymentSubScreen>(initialScreen);
 
@@ -35,9 +37,9 @@ export const PaymentNavigator: React.FC<PaymentNavigatorProps> = ({
     case 'PAYMENT':
       return <PaymentScreen onNavigate={setCurrentScreen} />;
     case 'STATUS':
-      return <StatusScreen onNavigate={setCurrentScreen} />;
+      return <StatusScreen onNavigate={setCurrentScreen} onNavigateToProducts={onNavigateToProducts} />;
     case 'HISTORY':
-      return <HistoryScreen onNavigate={setCurrentScreen} />;
+      return <HistoryScreen onNavigate={setCurrentScreen} onNavigateToProducts={onNavigateToProducts} />;
     default:
       return <PaymentScreen onNavigate={setCurrentScreen} />;
   }

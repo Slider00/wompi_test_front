@@ -9,16 +9,21 @@ import { scale, moderateScale } from '../../../utils/responsive';
 
 interface StatusScreenProps {
   onNavigate: (screen: 'PAYMENT' | 'STATUS' | 'HISTORY') => void;
+  onNavigateToProducts?: () => void;
 }
 
-export const StatusScreen: React.FC<StatusScreenProps> = ({ onNavigate }) => {
+export const StatusScreen: React.FC<StatusScreenProps> = ({ onNavigate, onNavigateToProducts }) => {
   const { t, i18n } = useTranslation();
   const dispatch = useAppDispatch();
   const activeTx = useAppSelector((state) => state.payment.activeTransaction);
 
   const handleBack = () => {
     dispatch(setActiveTransaction(null));
-    onNavigate('PAYMENT');
+    if (onNavigateToProducts) {
+      onNavigateToProducts();
+    } else {
+      onNavigate('PAYMENT');
+    }
   };
 
   if (!activeTx) {

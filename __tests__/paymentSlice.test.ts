@@ -2,10 +2,12 @@ import paymentReducer, {
   setActiveTransaction,
   clearError,
   setPendingAmount,
+  setCart,
   loadTransactions,
   saveNewTransaction,
   PaymentState,
   Transaction,
+  CartItem,
 } from '../src/features/payment/store/paymentSlice';
 import { configureStore } from '@reduxjs/toolkit';
 import { Security } from '../src/utils/security';
@@ -33,6 +35,7 @@ describe('Payment Redux Slice Tests', () => {
     loading: false,
     error: null,
     pendingAmount: null,
+    cart: [],
   };
 
   const sampleTx: Transaction = {
@@ -68,6 +71,12 @@ describe('Payment Redux Slice Tests', () => {
   test('should handle setPendingAmount', () => {
     const nextState = paymentReducer(initialState, setPendingAmount(150000));
     expect(nextState.pendingAmount).toBe(150000);
+  });
+
+  test('should handle setCart', () => {
+    const sampleCart: CartItem[] = [{ productId: 'prod-1', quantity: 2 }];
+    const nextState = paymentReducer(initialState, setCart(sampleCart));
+    expect(nextState.cart).toEqual(sampleCart);
   });
 
   describe('loadTransactions thunk', () => {

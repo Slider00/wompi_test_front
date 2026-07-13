@@ -1,33 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Alert } from 'react-native';
 import { LoginScreen } from '../screens/LoginScreen';
 import { RegisterScreen } from '../screens/RegisterScreen';
-import { OtpScreen } from '../screens/OtpScreen';
 
 interface AuthNavigatorProps {
   onLoginSuccess: () => void;
+  onEnterAsGuest: () => void;
+  initialScreen?: 'LOGIN' | 'REGISTER';
 }
 
-type AuthRoute = 'LOGIN' | 'REGISTER' | 'OTP';
+type AuthRoute = 'LOGIN' | 'REGISTER';
 
 /**
  * Navegador/Router modular del módulo de Autenticación.
  * Encapsula la lógica de acceso de usuarios de forma independiente.
  */
-export const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onLoginSuccess }) => {
-  const [currentScreen, setCurrentScreen] = useState<AuthRoute>('LOGIN');
-  const [targetEmail, setTargetEmail] = useState('');
-  const [flowType, setFlowType] = useState<'REGISTER' | 'RECOVERY'>('REGISTER');
+export const AuthNavigator: React.FC<AuthNavigatorProps> = ({ 
+  onLoginSuccess, 
+  onEnterAsGuest, 
+  initialScreen = 'LOGIN' 
+}) => {
+  const [currentScreen, setCurrentScreen] = useState<AuthRoute>(initialScreen);
+
+  useEffect(() => {
+    setCurrentScreen(initialScreen);
+  }, [initialScreen]);
 
   const handleRegisterSuccess = (email: string) => {
-    setTargetEmail(email);
-    setFlowType('REGISTER');
-    setCurrentScreen('OTP');
-  };
-
-  const handleVerifySuccess = (code: string) => {
-    if (flowType === 'REGISTER') {
-      onLoginSuccess();
-    }
+    Alert.alert(
+      'Registro Exitoso',
+      'Tu cuenta ha sido creada. Ya puedes iniciar sesión con tu correo y contraseña.',
+      [{ text: 'Aceptar' }]
+    );
+    setCurrentScreen('LOGIN');
   };
 
   switch (currentScreen) {
@@ -36,6 +41,7 @@ export const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onLoginSuccess }) 
         <LoginScreen
           onLoginSuccess={onLoginSuccess}
           onGoToRegister={() => setCurrentScreen('REGISTER')}
+          onEnterAsGuest={onEnterAsGuest}
         />
       );
     case 'REGISTER':
@@ -45,20 +51,12 @@ export const AuthNavigator: React.FC<AuthNavigatorProps> = ({ onLoginSuccess }) 
           onRegisterSuccess={handleRegisterSuccess}
         />
       );
-    case 'OTP':
-      return (
-        <OtpScreen
-          targetEmail={targetEmail}
-          flowType={flowType}
-          onVerifySuccess={handleVerifySuccess}
-          onGoBack={() => setCurrentScreen(flowType === 'REGISTER' ? 'REGISTER' : 'LOGIN')}
-        />
-      );
     default:
       return (
         <LoginScreen
           onLoginSuccess={onLoginSuccess}
           onGoToRegister={() => setCurrentScreen('REGISTER')}
+          onEnterAsGuest={onEnterAsGuest}
         />
       );
   }

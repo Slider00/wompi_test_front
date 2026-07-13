@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View } from 'react-native';
+import { View, Alert } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import './src/locales/i18n';
+import { useTranslation } from 'react-i18next';
 import { Provider } from 'react-redux';
 import { store, useAppDispatch } from './src/store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,8 +27,13 @@ function AppContent() {
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
+  const [authInitialScreen, setAuthInitialScreen] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
   const [activeTab, setActiveTab] = useState<Tab>('PRODUCTS');
   const [paymentScreen, setPaymentScreen] = useState<PaymentSubScreen>('PAYMENT');
+
+  const { t } = useTranslation();
+  const isAppUnlocked = isAuthenticated || isGuest;
 
   // Verificar si ya completó el Onboarding y si tiene sesión activa
   useEffect(() => {
@@ -62,18 +68,43 @@ function AppContent() {
     if (tab === 'STATUS') {
       return;
     }
+    if (isGuest && (tab === 'PAYMENT' || tab === 'HISTORY')) {
+      setAuthInitialScreen('REGISTER');
+      setIsGuest(false);
+      Alert.alert(
+        t('auth.register_required_to_buy') || 'Registro Requerido',
+        t('auth.register_required_to_buy') || 'Debes registrarte o iniciar sesión para acceder a esta sección.'
+      );
+      return;
+    }
     setActiveTab(tab);
   };
 
   const renderActiveTab = () => {
     switch (activeTab) {
       case 'PRODUCTS':
-        return <ProductsNavigator onNavigateToPayment={() => setActiveTab('PAYMENT')} />;
+        return (
+          <ProductsNavigator
+            onNavigateToPayment={() => {
+              if (isGuest) {
+                setAuthInitialScreen('REGISTER');
+                setIsGuest(false);
+                Alert.alert(
+                  t('auth.register_required_to_buy') || 'Registro Requerido',
+                  t('auth.register_required_to_buy') || 'Debes registrarte o iniciar sesión para realizar una compra.'
+                );
+                return;
+              }
+              setActiveTab('PAYMENT');
+            }}
+          />
+        );
       case 'PAYMENT':
         return (
           <PaymentNavigator
             initialScreen="PAYMENT"
             onScreenChange={setPaymentScreen}
+            onNavigateToProducts={() => setActiveTab('PRODUCTS')}
           />
         );
       case 'HISTORY':
@@ -81,10 +112,26 @@ function AppContent() {
           <PaymentNavigator
             initialScreen="HISTORY"
             onScreenChange={setPaymentScreen}
+            onNavigateToProducts={() => setActiveTab('PRODUCTS')}
           />
         );
       default:
-        return <ProductsNavigator onNavigateToPayment={() => setActiveTab('PAYMENT')} />;
+        return (
+          <ProductsNavigator
+            onNavigateToPayment={() => {
+              if (isGuest) {
+                setAuthInitialScreen('REGISTER');
+                setIsGuest(false);
+                Alert.alert(
+                  t('auth.register_required_to_buy') || 'Registro Requerido',
+                  t('auth.register_required_to_buy') || 'Debes registrarte o iniciar sesión para realizar una compra.'
+                );
+                return;
+              }
+              setActiveTab('PAYMENT');
+            }}
+          />
+        );
     }
   };
 
@@ -109,14 +156,31 @@ function AppContent() {
       return <OnboardingNavigator onComplete={handleOnboardingComplete} />;
     }
 
-    if (!isAuthenticated) {
-      return <AuthNavigator onLoginSuccess={() => setIsAuthenticated(true)} />;
+    if (!isAppUnlocked) {
+      return (
+        <AuthNavigator 
+          onLoginSuccess={() => {
+            setIsAuthenticated(true);
+            setIsGuest(false);
+          }} 
+          onEnterAsGuest={() => {
+            setIsGuest(true);
+          }}
+          initialScreen={authInitialScreen}
+        />
+      );
     }
 
     return (
       <View style={GLOBAL_STYLES.container}>
         {/* Header global de la aplicación */}
-        <Header onLogout={() => setIsAuthenticated(false)} />
+        <Header 
+          onLogout={() => {
+            setIsAuthenticated(false);
+            setIsGuest(false);
+            setAuthInitialScreen('LOGIN');
+          }} 
+        />
 
         {/* Contenido principal de la pantalla */}
         <View style={{ flex: 1 }}>

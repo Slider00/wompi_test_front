@@ -11,7 +11,7 @@
   "cvv_label": "CVV *",
   "btn_pay": "Pay with Wompi",
   "btn_history": "View Transaction History",
-  "btn_back": "Back to Checkout",
+  "btn_back": "Back to products",
   "validation": {
     "amount_error": "Please enter a valid amount greater than 0",
     "email_error": "Please enter a valid email address",
@@ -52,7 +52,10 @@
     "subtitle": "Select 1 to N items and process your payment",
     "btn_checkout": "Buy Now",
     "total_label": "Total",
-    "items_selected": "items selected"
+    "items_selected": "items selected",
+    "max_stock_reached": "Max stock reached",
+    "stock_label": "Stock",
+    "sold_out": "Sold Out"
   },
   "auth": {
     "brand_name": "Wompi Pay",
@@ -63,6 +66,8 @@
     "label_password": "Password",
     "placeholder_password": "Minimum 6 characters",
     "btn_login": "Sign In",
+    "btn_enter_as_guest": "Explore as Guest",
+    "register_required_to_buy": "You must register or log in to make a purchase.",
     "error_email_empty": "Email is required",
     "error_email_invalid": "Enter a valid email address",
     "error_password_empty": "Password is required",

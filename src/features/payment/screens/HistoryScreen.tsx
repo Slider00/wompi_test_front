@@ -1,18 +1,25 @@
-import React from 'react';
-import { StyleSheet, Text, View, FlatList, TouchableOpacity } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useAppSelector } from '../../../store';
+import { useAppDispatch, useAppSelector } from '../../../store';
+import { fetchBackendTransactions } from '../store/paymentSlice';
 import { RootContainer } from '../../../components/RootContainer';
 import { COLORS, SPACING, FONTS, SHADOWS, GLOBAL_STYLES } from '../../../theme/theme';
 import { scale, moderateScale } from '../../../utils/responsive';
 
 interface HistoryScreenProps {
   onNavigate: (screen: 'PAYMENT' | 'STATUS' | 'HISTORY') => void;
+  onNavigateToProducts?: () => void;
 }
 
-export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate }) => {
+export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate, onNavigateToProducts }) => {
   const { t, i18n } = useTranslation();
-  const { transactions } = useAppSelector((state) => state.payment);
+  const dispatch = useAppDispatch();
+  const { transactions, loading } = useAppSelector((state) => state.payment);
+
+  useEffect(() => {
+    dispatch(fetchBackendTransactions());
+  }, [dispatch]);
 
   // Formateador de Moneda según idioma
   const formatCurrency = (val: number) => {
@@ -66,6 +73,8 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate }) => {
         data={transactions}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
+        refreshing={loading}
+        onRefresh={() => dispatch(fetchBackendTransactions())}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
@@ -103,7 +112,13 @@ export const HistoryScreen: React.FC<HistoryScreenProps> = ({ onNavigate }) => {
       {/* Botón de Regreso */}
       <TouchableOpacity
         style={GLOBAL_STYLES.button}
-        onPress={() => onNavigate('PAYMENT')}
+        onPress={() => {
+          if (onNavigateToProducts) {
+            onNavigateToProducts();
+          } else {
+            onNavigate('PAYMENT');
+          }
+        }}
         activeOpacity={0.8}
       >
         <Text style={GLOBAL_STYLES.buttonText}>{t('btn_back')}</Text>

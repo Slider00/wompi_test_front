@@ -18,9 +18,14 @@ import { authService } from '../services/authService';
 interface LoginScreenProps {
   onLoginSuccess: () => void;
   onGoToRegister: () => void;
+  onEnterAsGuest: () => void;
 }
 
-export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onGoToRegister }) => {
+export const LoginScreen: React.FC<LoginScreenProps> = ({ 
+  onLoginSuccess, 
+  onGoToRegister,
+  onEnterAsGuest 
+}) => {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -165,6 +170,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLoginSuccess, onGoTo
         <TouchableOpacity style={styles.linkContainer} onPress={onGoToRegister} activeOpacity={0.7} testID="go-to-register">
           <Text style={styles.linkText}>{t('auth.btn_go_to_register')}</Text>
         </TouchableOpacity>
+
+        {/* Botón de Invitado */}
+        <TouchableOpacity style={styles.guestButton} onPress={onEnterAsGuest} activeOpacity={0.7}>
+          <Text style={styles.guestButtonText}>{t('auth.btn_enter_as_guest') || 'Explorar como Invitado'}</Text>
+        </TouchableOpacity>
       </View>
     </RootContainer>
   );
@@ -269,6 +279,17 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontSize: FONTS.sizes.sm,
     fontWeight: FONTS.weights.medium,
+  },
+  guestButton: {
+    marginTop: SPACING.md,
+    alignItems: 'center',
+    paddingVertical: SPACING.sm,
+  },
+  guestButtonText: {
+    color: COLORS.textSecondary,
+    fontSize: FONTS.sizes.sm,
+    fontWeight: FONTS.weights.medium,
+    textDecorationLine: 'underline',
   },
 });
 
