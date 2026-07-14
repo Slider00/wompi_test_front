@@ -77,7 +77,10 @@ export const Header: React.FC<HeaderProps> = ({ onLogout }) => {
       >
         {/* Ícono de salida estilizado con formas CSS nativas */}
         <View style={styles.iconCircle}>
-          <Text style={styles.logoutIconSymbol}>⏻</Text>
+          <View style={styles.powerIconContainer}>
+            <View style={styles.powerIconArc} />
+            <View style={styles.powerIconLine} />
+          </View>
         </View>
       </TouchableOpacity>
     </View>
@@ -145,11 +148,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(239, 68, 68, 0.3)',
   },
-  logoutIconSymbol: {
-    color: COLORS.danger, // Símbolo rojo vibrante
-    fontSize: scale(16),
-    fontWeight: FONTS.weights.bold,
-    lineHeight: scale(18),
+  powerIconContainer: {
+    width: scale(14),
+    height: scale(14),
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  powerIconArc: {
+    width: scale(14),
+    height: scale(14),
+    borderRadius: scale(7),
+    borderWidth: 2,
+    borderColor: COLORS.danger,
+    borderTopColor: 'transparent',
+  },
+  powerIconLine: {
+    width: 2,
+    height: scale(6),
+    backgroundColor: COLORS.danger,
+    position: 'absolute',
+    top: 0,
+    borderRadius: 1,
   },
 });
 

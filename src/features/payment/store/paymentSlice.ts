@@ -149,6 +149,12 @@ const paymentSlice = createSlice({
       .addCase(fetchBackendTransactions.fulfilled, (state, action: PayloadAction<Transaction[]>) => {
         state.loading = false;
         state.transactions = action.payload;
+        if (state.activeTransaction) {
+          const updatedActive = action.payload.find(tx => tx.id === state.activeTransaction?.id);
+          if (updatedActive) {
+            state.activeTransaction = updatedActive;
+          }
+        }
       })
       .addCase(fetchBackendTransactions.rejected, (state, action) => {
         state.loading = false;

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useAppSelector, useAppDispatch } from '../../../store';
-import { setActiveTransaction } from '../store/paymentSlice';
+import { setActiveTransaction, fetchBackendTransactions } from '../store/paymentSlice';
 import { RootContainer } from '../../../components/RootContainer';
 import { COLORS, SPACING, FONTS, SHADOWS, GLOBAL_STYLES } from '../../../theme/theme';
 import { scale, moderateScale } from '../../../utils/responsive';
@@ -16,6 +16,17 @@ export const StatusScreen: React.FC<StatusScreenProps> = ({ onNavigate, onNaviga
   const { t, i18n } = useTranslation();
   const dispatch = useAppDispatch();
   const activeTx = useAppSelector((state) => state.payment.activeTransaction);
+
+  // Polling en tiempo real si el estado de la transacción está PENDING
+  useEffect(() => {
+    if (!activeTx || activeTx.status !== 'PENDING') return;
+
+    const interval = setInterval(() => {
+      dispatch(fetchBackendTransactions());
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [activeTx?.id, activeTx?.status, dispatch]);
 
   const handleBack = () => {
     dispatch(setActiveTransaction(null));
