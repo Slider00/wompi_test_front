@@ -1,6 +1,6 @@
 {
   "name": "Wompi_test_front",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "android": "node scripts/load-env.js && react-native run-android",

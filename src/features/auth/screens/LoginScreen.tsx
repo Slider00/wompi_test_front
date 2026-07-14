@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { RootContainer } from '../../../components/RootContainer';
 import { COLORS, SPACING, FONTS, GLOBAL_STYLES, SHADOWS } from '../../../theme/theme';
 import { scale, verticalScale } from '../../../utils/responsive';
+import packageJson from '../../../../package.json';
 
 import { Security } from '../../../utils/security';
 import { authService } from '../services/authService';
@@ -175,6 +176,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         <TouchableOpacity style={styles.guestButton} onPress={onEnterAsGuest} activeOpacity={0.7}>
           <Text style={styles.guestButtonText}>{t('auth.btn_enter_as_guest') || 'Explorar como Invitado'}</Text>
         </TouchableOpacity>
+
+        {/* Versión de la Aplicación */}
+        <Text style={styles.versionText}>v{packageJson.version}</Text>
       </View>
     </RootContainer>
   );
@@ -290,6 +294,13 @@ const styles = StyleSheet.create({
     fontSize: FONTS.sizes.sm,
     fontWeight: FONTS.weights.medium,
     textDecorationLine: 'underline',
+  },
+  versionText: {
+    textAlign: 'center',
+    color: COLORS.textSecondary,
+    fontSize: FONTS.sizes.xs,
+    marginTop: SPACING.lg,
+    opacity: 0.6,
   },
 });
 
